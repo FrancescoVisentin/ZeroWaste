@@ -1,3 +1,6 @@
+# Test directory executable
+test/test
+
 # Build directory
 **/build
 
