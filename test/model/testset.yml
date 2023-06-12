@@ -1,0 +1,49 @@
+%YAML:1.0
+---
+categories:
+   - pork_cutlet
+   - seafood_salad
+   - salad
+   - pesto_pasta
+   - beans
+   - bread
+   - rabbit
+   - rice_peppers_peas
+   - meat_sauce
+   - fish_cutlet
+   - tomato_pasta
+   - basil_potato
+   - clams_mussels
+...
+---
+testPaths:
+   - "data/pork_cutlet/tray_1_food_image.jpg"
+   - "data/pork_cutlet/tray_6_leftover2.jpg"
+   - "data/seafood_salad/tray_8_food_image.jpg"
+   - "data/salad/tray_2_food_image.jpg"
+   - "data/salad/tray_3_leftover2.jpg"
+   - "data/salad/tray_6_leftover1.jpg"
+   - "data/salad/tray_7_leftover2.jpg"
+   - "data/pesto_pasta/tray_1_food_image.jpg"
+   - "data/beans/tray_1_food_image.jpg"
+   - "data/beans/tray_5_leftover1.jpg"
+   - "data/beans/tray_6_leftover2.jpg"
+   - "data/bread/tray_1_food_image.jpg"
+   - "data/bread/tray_4_leftover1.jpg"
+   - "data/bread/tray_5_leftover2.jpg"
+   - "data/rabbit/tray_3_food_image.jpg"
+   - "data/rabbit/tray_5_leftover1.jpg"
+   - "data/rice_peppers_peas/tray_4_food_image.jpg"
+   - "data/meat_sauce/tray_5_food_image.jpg"
+   - "data/fish_cutlet/tray_2_food_image.jpg"
+   - "data/fish_cutlet/tray_4_leftover1.jpg"
+   - "data/tomato_pasta/tray_2_food_image.jpg"
+   - "data/tomato_pasta/tray_3_leftover2.jpg"
+   - "data/basil_potato/tray_2_food_image.jpg"
+   - "data/basil_potato/tray_4_leftover1.jpg"
+   - "data/basil_potato/tray_7_leftover2.jpg"
+   - "data/clams_mussels/tray_6_food_image.jpg"
+   - "data/clams_mussels/tray_7_leftover1.jpg"
+   - "data/clams_mussels/tray_8_leftover2.jpg"
+testLabels: [ 0, 0, 1, 2, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 6, 6, 7, 8, 9, 9,
+    10, 10, 11, 11, 11, 12, 12, 12 ]
