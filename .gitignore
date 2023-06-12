@@ -1,5 +1,6 @@
 # Test directory executable
 test/test
+test/model/
 
 # Build directory
 **/build
