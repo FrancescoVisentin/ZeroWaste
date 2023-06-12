@@ -13,20 +13,37 @@ Ptr<SIFT> sift = SIFT::create();
 Ptr<BFMatcher> matcher = BFMatcher::create();
 Ptr<SVM> svm = SVM::load("model/model.yml");
 
+void plotHist(const Mat& hist) {
+    int histWidth = hist.cols*6;
+    int histHeight = 400;
+    int bin_w = cvRound((double) histWidth/hist.cols);
+    Mat histImage = cv::Mat(histHeight, histWidth, CV_8UC3, cv::Scalar(0,0,0));
 
-Mat getHistogram(const Mat& desc, const Mat& codewords) {
-    vector<vector<DMatch>> matches;
-    matcher->knnMatch(desc, codewords, matches, 2);
+    for(int i = 0; i < hist.cols; i++)
+        cout<<"pippo "<<hist.at<float>(0,i)<<"\n";
 
-    vector<DMatch> goodMatches;
-    for (vector<DMatch> m : matches) {
-        if (m[0].distance < 0.75*m[1].distance)
-            goodMatches.push_back(m[0]);
+    //normalize(hist, hist, 0, histImage.rows, NORM_MINMAX);
+    
+    for( int i = 0; i < hist.cols; i++) {
+        cv::line( histImage, 
+                  cv::Point(bin_w*(i), histHeight),
+                  cv::Point(bin_w*(i), histHeight-cvRound(hist.at<float>(0,i))),
+                  cv::Scalar(0,0,255),
+                  2,
+                  cv::LineTypes::LINE_8,
+                  0);
     }
 
+    imshow("hist", histImage);
+}
+
+Mat getHistogram(const Mat& desc, const Mat& codewords) {
+    vector<DMatch> matches;
+    matcher->match(desc, codewords, matches);
+
     Mat hist = Mat::zeros(1, codewords.rows, CV_32F);
-    for (int i = 0; i < goodMatches.size(); i++) {
-        hist.at<float>(0, goodMatches[i].trainIdx)++;
+    for (int i = 0; i < matches.size(); i++) {
+        hist.at<float>(0, matches[i].trainIdx)++;
     }
 
     return hist;
@@ -48,29 +65,22 @@ void predictAndShow(string path, int label, const vector<String> categories, con
     vector<KeyPoint> key;
     sift->detectAndCompute(img, noArray(), key, desc);
 
-    vector<vector<DMatch>> matches;
-    matcher->knnMatch(desc, codewords, matches, 2);
+    vector<DMatch> matches;
+    matcher->match(desc, codewords, matches);
 
-    vector<DMatch> goodMatches;
-    for (vector<DMatch> m : matches) {
-        if (m[0].distance < 0.75*m[1].distance)
-            goodMatches.push_back(m[0]);
-    }
-
+    vector<KeyPoint> keyMatched;
     Mat hist = Mat::zeros(1, codewords.rows, CV_32F);
-    for (int i = 0; i < goodMatches.size(); i++) {
-        hist.at<float>(0, goodMatches[i].trainIdx)++;
+    for (int i = 0; i < matches.size(); i++) {
+        hist.at<float>(0, matches[i].trainIdx)++;
+        keyMatched.push_back(key[matches[i].queryIdx]);
     }
 
     int p = svm->predict(hist);
 
-    vector<KeyPoint> goodKey;
-    for (DMatch m : goodMatches) {
-        goodKey.push_back(key[m.queryIdx]);
-    }
-
     drawKeypoints(img, key, img, Scalar(0, 255, 0));
-    drawKeypoints(img, goodKey, img, Scalar(0, 0, 255));
+    drawKeypoints(img, keyMatched, img, Scalar(0, 0, 255));
+
+    plotHist(hist);
 
     imshow("Prediction", img);
     moveWindow("Prediction", 10, 10);

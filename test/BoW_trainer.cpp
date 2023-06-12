@@ -13,7 +13,7 @@ Ptr<SIFT> sift = SIFT::create();
 Ptr<BFMatcher> matcher = BFMatcher::create();
 Ptr<SVM> svm = SVM::create();
 
-int N_CODEWORDS = 200;
+int N_CODEWORDS = 210;
 
 void getDirectoriesAndCategories(string path, vector<string>& directories, vector<string>& categories) {
     for(auto p : filesystem::recursive_directory_iterator(path))
@@ -55,18 +55,12 @@ void splitData(const vector<string>& dir, int ratio, vector<string>& trainPaths,
 
 
 Mat getHistogram(const Mat& desc, const Mat& codewords) {
-    vector<vector<DMatch>> matches;
-    matcher->knnMatch(desc, codewords, matches, 2);
-
-    vector<DMatch> goodMatches;
-    for (vector<DMatch> m : matches) {
-        if (m[0].distance < 0.75*m[1].distance)
-            goodMatches.push_back(m[0]);
-    }
+    vector<DMatch> matches;
+    matcher->match(desc, codewords, matches);
 
     Mat hist = Mat::zeros(1, codewords.rows, CV_32F);
-    for (int i = 0; i < goodMatches.size(); i++) {
-        hist.at<float>(0, goodMatches[i].trainIdx)++;
+    for (int i = 0; i < matches.size(); i++) {
+        hist.at<float>(0, matches[i].trainIdx)++;
     }
 
     return hist;
