@@ -16,13 +16,19 @@ Ptr<SVM> svm = SVM::create();
 int N_CODEWORDS = 210;
 
 void getDirectoriesAndCategories(string path, vector<string>& directories, vector<string>& categories) {
-    for(auto p : filesystem::recursive_directory_iterator(path))
+    vector<string> paths;
+    for(auto p : filesystem::recursive_directory_iterator(path)) {
         if (p.is_directory()) {
-            string dir = p.path().string();
-
-            directories.push_back(dir);
-            categories.push_back(dir.erase(0, path.size()));
+            paths.push_back(p.path().string());
         }
+    }
+    
+    std::sort(paths.begin(), paths.end());
+
+    for(int i = 0; i < paths.size(); i++) {
+        directories.push_back(paths[i]);
+        categories.push_back(paths[i].erase(0, path.size()));
+    }
 
     FileStorage file("model/testset.yml", FileStorage::WRITE);
     file<<"categories"<<categories;

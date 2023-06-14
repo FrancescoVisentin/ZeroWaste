@@ -19,10 +19,7 @@ void plotHist(const Mat& hist) {
     int bin_w = cvRound((double) histWidth/hist.cols);
     Mat histImage = cv::Mat(histHeight, histWidth, CV_8UC3, cv::Scalar(0,0,0));
 
-    for(int i = 0; i < hist.cols; i++)
-        cout<<"pippo "<<hist.at<float>(0,i)<<"\n";
-
-    //normalize(hist, hist, 0, histImage.rows, NORM_MINMAX);
+    normalize(hist, hist, 0, histImage.rows, NORM_MINMAX);
     
     for( int i = 0; i < hist.cols; i++) {
         cv::line( histImage, 
