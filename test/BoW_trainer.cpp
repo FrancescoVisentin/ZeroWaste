@@ -46,7 +46,7 @@ void splitData(const vector<string>& dir, int ratio, vector<string>& trainPaths,
             if (j % ratio == 0) {
                 testPaths.push_back(cat_paths[j]);
                 testLabels.push_back(i);
-                continue; //skip test set
+                //continue; //skip test set
             }
             trainPaths.push_back(cat_paths[j]);
             trainLabels.push_back(i);  
@@ -86,7 +86,7 @@ void getDescAndCodewords(const vector<string>& trainImgsPaths, vector<Mat>& desc
     cout<<"\tFeatures extracted!\n";
 
     cout<<"\tStarting k-means...\n";
-    TermCriteria criteria = TermCriteria(TermCriteria::MAX_ITER | TermCriteria::EPS, 1000, 1.0);
+    TermCriteria criteria = TermCriteria(TermCriteria::MAX_ITER | TermCriteria::EPS, 2000, 1.0);
     Mat label;
     double d = kmeans(descriptors, N_CODEWORDS, label, criteria, 3, KMEANS_PP_CENTERS, codewords);
 
@@ -100,7 +100,9 @@ void getDescAndCodewords(const vector<string>& trainImgsPaths, vector<Mat>& desc
 void getTrainingData(const vector<Mat>& descPerImg, const vector<int> trueImgLabels, const Mat& codewords, Mat& trainHistograms, Mat& trainLabels) {
     for (int i = 0; i < descPerImg.size(); i++) {
         Mat hist = getHistogram(descPerImg[i], codewords);
-        
+
+        normalize(hist, hist, 0, 500, NORM_MINMAX);
+
         trainHistograms.push_back(hist);
         trainLabels.push_back(Mat(1,1,CV_32SC1, trueImgLabels[i]));
     }

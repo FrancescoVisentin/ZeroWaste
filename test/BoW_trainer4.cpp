@@ -33,7 +33,6 @@ void loadData(string path, vector<string>& categories, vector<string>& imgPaths,
 }
 
 void getTrainingData(int channel, const vector<string>& imgPaths, vector<Mat>& trainHist, Mat& codewords) {
-    cout<<"START THREAD: "<<channel<<"\n";
     Ptr<SIFT> sift = SIFT::create();
     Ptr<BFMatcher> matcher = BFMatcher::create();
 
@@ -51,7 +50,6 @@ void getTrainingData(int channel, const vector<string>& imgPaths, vector<Mat>& t
         descriptors.push_back(desc);
     }
 
-    cout<<"done!\n";
 
     Mat label;
     TermCriteria criteria = TermCriteria(TermCriteria::MAX_ITER | TermCriteria::EPS, 2000, 1.0);
@@ -69,8 +67,6 @@ void getTrainingData(int channel, const vector<string>& imgPaths, vector<Mat>& t
 
         trainHist[i] = hist;
     }
-
-    cout<<"END THREAD: "<<channel<<"\n";
 }
 
 void getJointHistograms(const vector<vector<Mat>>& histPerChannel, Mat& trainHistograms) {
@@ -84,7 +80,6 @@ void getJointHistograms(const vector<vector<Mat>>& histPerChannel, Mat& trainHis
 
         trainHistograms.push_back(hist);
     }
-    
 }
 
 void trainBoW(const Mat& descPerImg, const Mat& labelPerImg) {
@@ -110,6 +105,7 @@ int main(int argc, char** argv) {
 
     auto start = chrono::steady_clock::now();
 
+    /*
     vector<thread> threads;
     vector<Mat> codewords(3);
     vector<vector<Mat>> histPerChannel(3);
@@ -120,6 +116,14 @@ int main(int argc, char** argv) {
     for (auto& th : threads) {
         th.join();
     }
+    */
+
+    vector<Mat> codewords(3);
+    vector<vector<Mat>> histPerChannel(3);
+    for (int i = 0; i < 3; i++) {
+        getTrainingData(i, trainImgsPaths, histPerChannel[i], codewords[i]);
+    }
+    
 
     auto end = chrono::steady_clock::now();
     cout<< chrono::duration_cast<chrono::minutes>(end-start).count() << " minutes\n";

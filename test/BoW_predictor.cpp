@@ -53,6 +53,8 @@ int predict(string img_path, const Mat& codewords) {
 
     Mat hist = getHistogram(desc, codewords);
 
+    normalize(hist, hist, 0, 500, NORM_MINMAX);
+
     return svm->predict(hist);
 }
 
@@ -71,6 +73,8 @@ void predictAndShow(string path, int label, const vector<String> categories, con
         hist.at<float>(0, matches[i].trainIdx)++;
         keyMatched.push_back(key[matches[i].queryIdx]);
     }
+
+    normalize(hist, hist, 0, 500, NORM_MINMAX);
 
     int p = svm->predict(hist);
 
@@ -103,7 +107,7 @@ void predictBatch(const vector<string>& testImgsPaths, const vector<int>& testIm
 int main(int argc, char** argv) {
     vector<int> testImgsLabels;
     vector<string> testImgsPaths, categories;
-    FileStorage file("model/testset.yml", FileStorage::READ);
+    FileStorage file("model/full_testset.yml", FileStorage::READ);
     file["testPaths"]>>testImgsPaths;
     file["testLabels"]>>testImgsLabels;
     file["categories"]>>categories;

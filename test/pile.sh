@@ -24,7 +24,7 @@ set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 	
 source="$1"
 
-g++ $source -o test -I/usr/local/include/opencv4 -lopencv_highgui -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_features2d -lopencv_xfeatures2d -lopencv_calib3d -lopencv_ml
+g++ --std=c++17 $source -o test  -I/usr/local/include/opencv4 -lopencv_highgui -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_features2d -lopencv_xfeatures2d -lopencv_calib3d -lopencv_ml -lpthread
 
 if [[ $? -eq 0 ]] && [[ $RUN ]]; then
 	./test
