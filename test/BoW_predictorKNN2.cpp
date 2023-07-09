@@ -13,7 +13,7 @@ using namespace cv::ml;
 void getJointNORM(const vector<Mat>& testHist, vector<Mat>& testHistNorm) {
     for (int i = 0; i < testHist.size(); i++) {
         Mat hist = testHist[i].clone();
-        normalize(hist, hist, 1, NORM_MINMAX);
+        normalize(hist, hist, 500, NORM_MINMAX);
 
         testHistNorm.push_back(hist);
     }
@@ -58,7 +58,7 @@ void predictSVM(string model, const vector<Mat>& testHist, const vector<int>& te
 }
 
 void predictKNN(string model, const vector<Mat>& testHist, const vector<int>& testImgsLabels, const vector<string> categories) {
-    cout<<"Evaluating model predictions on "<<testHist.size()<<" images...\n";
+    cout<<"\nEvaluating model predictions on "<<testHist.size()<<" images...\n";
     
     int count = 0;
     Mat neigh, dist;

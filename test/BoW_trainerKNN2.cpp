@@ -54,7 +54,7 @@ void getJointNORM(const vector<vector<Mat>>& histPerChannel, Mat& trainHistogram
             hist.push_back(histPerChannel[j][i]);
         }
         hist = hist.reshape(1, 1);
-        normalize(hist, hist, 1, NORM_MINMAX);
+        normalize(hist, hist, 500, NORM_MINMAX);
 
         trainHistograms.push_back(hist);
     }
