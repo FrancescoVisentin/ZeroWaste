@@ -6,11 +6,8 @@ include_directories(${OpenCV_INCLUDE_DIRS} include)
 
 add_executable(main
     src/main.cpp
-)
-
-add_executable(test
-    test/watershed.cpp
+    src/segmentation.cpp
+    src/classifier.cpp
 )
 
 target_link_libraries(main ${OpenCV_LIBS})
-target_link_libraries(test ${OpenCV_LIBS})
