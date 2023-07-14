@@ -39,12 +39,12 @@ namespace zw {
     };
 
     // Draw the given mask as an overlay over the input image 
-    static void drawMask(cv::Mat& src, const cv::Mat& mask, int id) {
+    static void drawMask(cv::Mat& src, const cv::Mat& mask) {
         cv::Mat overlay = src.clone();
         for (int i = 0; i < overlay.rows; i++) {
             for (int j = 0; j < overlay.rows; j++) {
                 if (mask.at<uchar>(i,j) > 0)
-                    overlay.at<cv::Vec3b>(i,j) = foodColors[id];
+                    overlay.at<cv::Vec3b>(i,j) = foodColors[mask.at<uchar>(i,j)];
             }
         }
 
