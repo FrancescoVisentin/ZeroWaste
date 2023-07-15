@@ -2,6 +2,8 @@
 test/test
 test/model/*
 test/data
+inputs/*/*/bounding_boxes
+inputs/*/*/masks
 
 # Build directory
 **/build
