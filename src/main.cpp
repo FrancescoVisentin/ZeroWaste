@@ -35,8 +35,8 @@ void processTray(string trayPath, Mat& out) {
 
         vector<pair<Rect,int>> trayItems;
         Mat foodMask = Mat::zeros(src.size(), CV_8U);
-        segmentAndDetectPlates(src, platesROI, foodMask, trayItems);
-        segmentAndDetectSalad(src, saladROI, foodMask, trayItems);
+        segmentAndDetectPlates(src & roiMask, platesROI, foodMask, trayItems);
+        segmentAndDetectSalad(src & roiMask, saladROI, foodMask, trayItems);
         segmentAndDetectBread(src, breadROI, foodMask, trayItems);
 
         trayOutputs.push_back(src);

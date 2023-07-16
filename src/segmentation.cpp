@@ -11,21 +11,23 @@ using namespace zw;
 /*************************************************************************************/
 
 // Using the saturation channel, extracts the main areas of interest from the
-// input image and computes a bounding rectangle around them
-void detectMainComponents(const Mat& src, int thresh, Rect& boundRect){
+// input image and initializes a cv::grubCut mask with possible foreground/background
+void detectMainComponents(const Mat& src, int lower, int upper, Mat& mask){
     Mat satMask;
     GaussianBlur(src, satMask, Size(5,5), 1);
     cvtColor(satMask, satMask, COLOR_BGR2HSV);
     extractChannel(satMask, satMask, 1);
 
-    // Threshold on the saturation channel to detect main components
-    threshold(satMask, satMask, thresh, 255, THRESH_BINARY);
+    // Extract a saturation range to extract the desired item
+    inRange(satMask, lower, upper, satMask);
 
-    // Correct the thresholded image
-    Mat element = getStructuringElement(MORPH_ELLIPSE, Size(15,15));
+    // Correct the obtained binary image
+    Mat element = getStructuringElement(MORPH_ELLIPSE, Size(20,20));
     morphologyEx(satMask, satMask, MORPH_CLOSE, element);
+    element = getStructuringElement(MORPH_ELLIPSE, Size(7,7));
+    morphologyEx(satMask, satMask, MORPH_OPEN, element);
 
-    // Find contours in the thesholded image and compute a bounding box for each one
+    // Find contours in the image and compute a bounding box for each one
     vector<Vec4i> hierarchy;
     vector<vector<Point>> contours;
     findContours(satMask, contours, hierarchy, RETR_TREE, CHAIN_APPROX_NONE);
@@ -38,37 +40,42 @@ void detectMainComponents(const Mat& src, int thresh, Rect& boundRect){
         contoursRect.push_back(boundingRect(contoursPoly));
     }
 
-    // Takes the largest bounding box
-    boundRect = contoursRect[0];
-    for (int i = 1; i < contoursRect.size(); i++) {
-        if (contoursRect[i].area() > boundRect.area()) boundRect = contoursRect[i];
-    }
-
-    Mat dst = src.clone();
-    for(size_t i = 0; i < contours.size(); i++)
-        if (contourArea(contours[i]) >= 80)
-            if ( hierarchy[i][3] == -1) 
+    mask = Mat::zeros(src.size(), CV_8U);
+    if (contoursRect.size() > 0) {
+        // Selects the main areas of interest and initialize the mask
+        Mat dst = src.clone();
+        for (int i = 0; i < contours.size(); i++) {
+            if (contourArea(contours[i]) >= 1000 && hierarchy[i][3] == -1) {
                 drawContours(dst, contours, i, Scalar(0,255,0), 1);
-    
-    /*                                                                  //TODO: remove
-    rectangle(dst, boundRect, 255);
-    imshow("mask", dst);
-    imshow("threshold", satMask);
-    cout<<boundRect.area()<<"\n";
-    waitKey(0);
-    */
+                rectangle(dst, contoursRect[i], 255);
+                rectangle(mask, contoursRect[i], GC_PR_BGD, -1);
+            }
+        }
+
+        for (int i = 0; i < mask.rows; i++) {
+            for (int j = 0; j < mask.cols; j++) {
+                if (satMask.at<u_char>(i,j) && mask.at<u_char>(i,j) == GC_PR_BGD) mask.at<u_char>(i,j) = GC_PR_FGD; 
+            }
+        }
+
+        ///*                                                                  //TODO: remove
+        imshow("Contours", dst);
+        imshow("Mask", mask*30);
+        //*/
+    }   
 }
 
 // Applies the cv::grubCut segmentation algorithm inside the area defined by the rect given in input 
-void grabCutSeg(const Mat&src, const Rect& rect, int id, Mat& mask){
+void grabCutSeg(const Mat& src, int id, Mat& mask) {
     Mat bgdModel, fgdModel;
-    grabCut(src, mask, rect, bgdModel, fgdModel, 5, GC_INIT_WITH_RECT);
+    grabCut(src, mask, Rect(), bgdModel, fgdModel, 5, GC_INIT_WITH_MASK);
    
     // Assigns to the pixels in the foreground the given food id
+    static_cast<u_char>(id);
     for (int i = 0; i < mask.rows; i++) {
         for (int j = 0; j < mask.cols; j++) {
-            if (mask.at<uchar>(i,j) == GC_FGD || mask.at<uchar>(i,j) == GC_PR_FGD) mask.at<uchar>(i,j) = id;
-            else mask.at<uchar>(i,j) = 0;
+            if (mask.at<u_char>(i,j) == GC_FGD || mask.at<u_char>(i,j) == GC_PR_FGD) mask.at<u_char>(i,j) = id;
+            else mask.at<u_char>(i,j) = 0;
         }
     }
 }
@@ -122,50 +129,63 @@ void zw::getSaladROI(const Mat& gray, Mat& mask, vector<Rect>& saladROI) {
 
 
 void zw::getBreadROI(const Mat& src, vector<Rect>& breadROI) {
-   
+      
 }
 
 
-void zw::segmentAndDetectPlates(Mat src, vector<Rect>& platesROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+void zw::segmentAndDetectPlates(const Mat& src, const vector<Rect>& platesROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+    for (int i = 0; i < platesROI.size(); i++) {
+        Mat roi = Mat(src, platesROI[i]);
 
-}
+        vector<int> plateItemsIDs;
+        detect(roi, plateItemsIDs);
 
+        Mat tmp = roi.clone();
+        for (int j = 0; j < plateItemsIDs.size(); j ++) {
+            // Get the saturation range for the current plate item
+            pair<int, int> satRange = saturationRange[plateItemsIDs[j]]; 
 
-void zw::segmentAndDetectSalad(Mat& src, vector<Rect>& saladROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
-    for (int i = 0; i < saladROI.size(); i++) {
-        Mat roi = Mat(src, saladROI[i]);
+            // Computes a mask of probable foreground/background for the current food 
+            Mat mask;
+            detectMainComponents(tmp, satRange.first, satRange.second, mask);
+            
+            if (countNonZero(mask) > 0) {
+                // Segment the food starting from the mask
+                grabCutSeg(tmp, plateItemsIDs[j], mask);
 
-        // Computes a minimum size bounding box around the salad inside the bowl
-        Rect boundBox;
-        detectMainComponents(roi, SAT_THRESH_SALAD, boundBox);
+                // Add the detected segmented region to the tray mask
+                Mat(foodsMask, platesROI[i]) += mask;
 
-        // Checks if the size of the returned bounding box is big enough
-        if (boundBox.area() < MIN_AREA_SALAD) return;
+                // Save the bounding box of the above detected region 
+                Rect finalBox = boundingRect(mask);
+                finalBox.x += platesROI[i].x;
+                finalBox.y += platesROI[i].y;
+                trayItems.push_back(pair<Rect,int>(finalBox, plateItemsIDs[j]));
 
-        Mat mask;
-        grabCutSeg(roi, boundBox, SALAD, mask);
+                // Draws the overlay for showing the results
+                drawMask(roi, mask);
 
-        // Add the detected segmented region to the tray mask
-        Mat(foodsMask, saladROI[i]) += mask;
+                // Removes the region segmented in this iteration
+                threshold(mask, mask, 0.5, 255, THRESH_BINARY);
+                cvtColor(mask, mask, COLOR_GRAY2BGR);
+                tmp -= mask;
+            }
 
-        // Save the bounding box of the above detected region 
-        Rect finalBox = boundingRect(mask);
-        boundBox.x += saladROI[i].x;
-        boundBox.y += saladROI[i].y;
-        trayItems.push_back(pair(boundBox, SALAD));
-
-        // Draws the overlay for showing the results
-        drawMask(roi, mask);
-
-        /*                                                                  //TODO: remove
-        imshow("m", roi);
-        waitKey(0);
-        */
+            ///*                                                                  //TODO: remove
+            imshow("tmp", tmp);
+            imshow("res", roi);
+            waitKey(0);
+            //*/
+        }
     }
 }
 
 
-void zw::segmentAndDetectBread(Mat& src, vector<Rect>& breadROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+void zw::segmentAndDetectSalad(const Mat& src, const vector<Rect>& saladROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+}
+
+
+void zw::segmentAndDetectBread(const Mat& src, const vector<Rect>& breadROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
 
 }
     
