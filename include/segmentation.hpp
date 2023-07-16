@@ -12,7 +12,8 @@ namespace zw {
     constexpr int SAT_THRESH_SALAD = 185;
     constexpr int MIN_AREA_SALAD = 10000;
 
-
+    //Function used to filter the circles found
+    void filterCircles(const std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& filtered);
 
     // Functions used to detect the position of foods inside the input image
     void getPlatesROI(const cv::Mat& gray, cv::Mat& mask, std::vector<cv::Rect>& platesROI); //Lorenzo
