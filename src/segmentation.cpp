@@ -80,6 +80,15 @@ void grabCutSeg(const Mat& src, int id, Mat& mask) {
     }
 }
 
+// Function used to filter the circles found by Hough circles
+void filterCircles(const vector<Vec3f>& circles, vector<Vec3f>& filtered) {
+    for(int i = 0; i < circles.size(); i++)
+        //Filter by radius size
+        if(circles[i][2] >= 186 && circles[i][2] <= 240) filtered.push_back(circles[i]);
+    
+    //If more than one salad plate is found then remove one
+    if(filtered.size() > 1) filtered.pop_back();
+}
 
 
 
@@ -110,11 +119,14 @@ void zw::getPlatesROI(const Mat& gray, Mat& mask, vector<Rect>& platesROI) {
 
 void zw::getSaladROI(const Mat& gray, Mat& mask, vector<Rect>& saladROI) {
     vector<Vec3f> circles;
-    HoughCircles(gray, circles, HOUGH_GRADIENT_ALT, 1, 400, 250, 0.88, 140, 230);
+    HoughCircles(gray, circles, HOUGH_GRADIENT_ALT, 1.5, gray.rows/16, 310, 0.36, 150, 300);
 
-    for (int i = 0; i < circles.size() & i < 1; i++) {
-        Point center = Point(circles[i][0], circles[i][1]);
-        int radius = round(circles[i][2]);
+    vector<Vec3f> filtered_circles;
+    filterCircles(circles, filtered_circles);
+
+    for (int i = 0; i < filtered_circles.size() & i < 1; i++) {
+        Point center = Point(filtered_circles[i][0], filtered_circles[i][1]);
+        int radius = round(filtered_circles[i][2]);
 
         int x = (center.x-radius > 0) ? center.x-radius : 0;
         int y = (center.y-radius > 0) ? center.y-radius : 0;

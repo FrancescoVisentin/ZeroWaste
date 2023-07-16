@@ -16,11 +16,11 @@ namespace zw {
 
     constexpr std::array<std::pair<int,int>, 14> saturationRange = {
         std::pair<int, int> (  0,   0),    // Background
-        std::pair<int, int> (  0, 255),    // Pasta pesto
-        std::pair<int, int> (  0, 255),    // Pasta tomato
-        std::pair<int, int> (  0, 255),    // Pasta meat sauce
-        std::pair<int, int> (  0, 255),    // Pasta clams and mussels
-        std::pair<int, int> (  0, 255),    // Rice peppers and peas
+        std::pair<int, int> (190, 255),    // Pasta pesto
+        std::pair<int, int> (190, 255),    // Pasta tomato
+        std::pair<int, int> (190, 255),    // Pasta meat sauce
+        std::pair<int, int> (190, 255),    // Pasta clams and mussels
+        std::pair<int, int> (190, 255),    // Rice peppers and peas
         std::pair<int, int> ( 69,  86),    // Pork cutlet
         std::pair<int, int> (166, 170),    // Fish cutlet
         std::pair<int, int> (204, 225),    // Rabbit
