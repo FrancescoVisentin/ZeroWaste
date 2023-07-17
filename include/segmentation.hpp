@@ -14,7 +14,7 @@ namespace zw {
     constexpr int MIN_AREA_PLATES = 1000;
     constexpr int MIN_AREA_BREAD = 1000;
 
-    constexpr std::array<std::pair<int,int>, 14> saturationRange = {
+    const std::array<std::pair<int,int>, 14> saturationRange = {
         std::pair<int, int> (  0,   0),    // Background
         std::pair<int, int> (190, 255),    // Pasta pesto
         std::pair<int, int> (190, 255),    // Pasta tomato
