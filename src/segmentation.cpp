@@ -12,7 +12,7 @@ using namespace zw;
 
 // Using the saturation channel, extracts the main areas of interest from the
 // input image and initializes a cv::grubCut mask with possible foreground/background
-void detectMainComponents(const Mat& src, int lower, int upper, Mat& mask){
+void detectMainComponents(const Mat& src, int lower, int upper, int minArea, Mat& mask){
     Mat satMask;
     GaussianBlur(src, satMask, Size(5,5), 1);
     cvtColor(satMask, satMask, COLOR_BGR2HSV);
@@ -45,7 +45,7 @@ void detectMainComponents(const Mat& src, int lower, int upper, Mat& mask){
         // Selects the main areas of interest and initialize the mask
         Mat dst = src.clone();
         for (int i = 0; i < contours.size(); i++) {
-            if (contourArea(contours[i]) >= 1000 && hierarchy[i][3] == -1) {
+            if (contourArea(contours[i]) >= minArea && hierarchy[i][3] == -1) {
                 drawContours(dst, contours, i, Scalar(0,255,0), 1);
                 rectangle(dst, contoursRect[i], 255);
                 rectangle(mask, contoursRect[i], GC_PR_BGD, -1);
@@ -124,7 +124,7 @@ void zw::getSaladROI(const Mat& gray, Mat& mask, vector<Rect>& saladROI) {
     vector<Vec3f> filtered_circles;
     filterCircles(circles, filtered_circles);
 
-    for (int i = 0; i < filtered_circles.size() & i < 1; i++) {
+    for (int i = 0; i < filtered_circles.size(); i++) {
         Point center = Point(filtered_circles[i][0], filtered_circles[i][1]);
         int radius = round(filtered_circles[i][2]);
 
@@ -159,7 +159,7 @@ void zw::segmentAndDetectPlates(const Mat& src, const vector<Rect>& platesROI, M
 
             // Computes a mask of probable foreground/background for the current food 
             Mat mask;
-            detectMainComponents(tmp, satRange.first, satRange.second, mask);
+            detectMainComponents(tmp, satRange.first, satRange.second, MIN_AREA_PLATES, mask);
             
             if (countNonZero(mask) > 0) {
                 // Segment the food starting from the mask
@@ -194,6 +194,39 @@ void zw::segmentAndDetectPlates(const Mat& src, const vector<Rect>& platesROI, M
 
 
 void zw::segmentAndDetectSalad(const Mat& src, const vector<Rect>& saladROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+    for (int i = 0; i < saladROI.size(); i++) {
+        Mat roi = Mat(src, saladROI[i]);
+
+        // Get the salad saturation range
+        pair<int, int> satRange = saturationRange[SALAD]; 
+
+        // Computes a mask of probable foreground/background for the bowl 
+        Mat mask;
+        detectMainComponents(roi, satRange.first, satRange.second, MIN_AREA_SALAD, mask);
+        
+        if (countNonZero(mask) > 0) {
+            // Segment the food starting from the mask
+            grabCutSeg(roi, SALAD, mask);
+
+            // Add the detected segmented region to the tray mask
+            Mat(foodsMask, saladROI[i]) += mask;
+
+            // Save the bounding box of the above detected region 
+            Rect finalBox = boundingRect(mask);
+            finalBox.x += saladROI[i].x;
+            finalBox.y += saladROI[i].y;
+            trayItems.push_back(pair<Rect,int>(finalBox, SALAD));
+
+            // Draws the overlay for showing the results
+            drawMask(roi, mask);
+        }
+
+        ///*                                                                  //TODO: remove
+        imshow("res", roi);
+        waitKey(0);
+        //*/
+    }    
+
 }
 
 

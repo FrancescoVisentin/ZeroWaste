@@ -10,7 +10,7 @@
 
 namespace zw {
     // Constant values/thresholds used inside the code
-    constexpr int MIN_AREA_SALAD = 10000;
+    constexpr int MIN_AREA_SALAD = 1000;
     constexpr int MIN_AREA_PLATES = 1000;
     constexpr int MIN_AREA_BREAD = 1000;
 
@@ -27,7 +27,7 @@ namespace zw {
         std::pair<int, int> (  0, 255),    // Seafood salas
         std::pair<int, int> (172, 230),    // Beans
         std::pair<int, int> ( 60,  98),    // Basil potato
-        std::pair<int, int> (185, 255),    // Salad
+        std::pair<int, int> (182, 211),    // Salad
         std::pair<int, int> ( 60,  98)     // Bread
     };
 
