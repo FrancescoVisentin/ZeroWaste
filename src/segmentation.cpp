@@ -99,7 +99,7 @@ void filterCircles(const vector<Vec3f>& circles, vector<Vec3f>& filtered) {
 /*************************************************************************************/
 void zw::getPlatesROI(const Mat& gray, Mat& mask, vector<Rect>& platesROI) {
     vector<Vec3f> circles;
-    HoughCircles(gray, circles, HOUGH_GRADIENT_ALT, 1, 200, 400, 0.7, 230);
+    HoughCircles(gray, circles, HOUGH_GRADIENT_ALT, 23, 20, 387, 0.75, 238);
 
     for (int i = 0; i < circles.size(); i++) {
         Point center = Point(circles[i][0], circles[i][1]);
