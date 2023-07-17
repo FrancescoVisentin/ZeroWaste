@@ -1,4 +1,5 @@
 #include <segmentation.hpp>
+#include <segmentation_utils.hpp>
 
 using namespace std;
 using namespace cv;
@@ -80,17 +81,6 @@ void grabCutSeg(const Mat& src, int id, Mat& mask) {
     }
 }
 
-// Function used to filter the circles found by Hough circles
-void filterCircles(const vector<Vec3f>& circles, vector<Vec3f>& filtered) {
-    for(int i = 0; i < circles.size(); i++)
-        //Filter by radius size
-        if(circles[i][2] >= 186 && circles[i][2] <= 240) filtered.push_back(circles[i]);
-    
-    //If more than one salad plate is found then remove one
-    if(filtered.size() > 1) filtered.pop_back();
-}
-
-
 
 /*************************************************************************************/
 /*                     Definitions of the functions declared                         */
@@ -126,7 +116,7 @@ void zw::getSaladROI(const Mat& gray, Mat& roiMask, vector<Rect>& saladROI, vect
     HoughCircles(gray, circles, HOUGH_GRADIENT_ALT, 1.5, gray.rows/16, 310, 0.36, 150, 300);
 
     vector<Vec3f> filtered_circles;
-    filterCircles(circles, filtered_circles);
+    zw_utils::filterCircles(circles, filtered_circles);
 
     for (int i = 0; i < filtered_circles.size(); i++) {
         Point center = Point(filtered_circles[i][0], filtered_circles[i][1]);
