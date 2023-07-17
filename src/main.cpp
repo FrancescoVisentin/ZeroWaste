@@ -21,6 +21,8 @@ void processTray(string trayPath, Mat& out) {
     vector<Mat> detectedFoodsMask;
     vector<vector<pair<Rect,int>>> detectedItemsPerTray;
     for (int i = 0; i < imgPaths.size(); i++) {
+        cout << "\b\b\b"+to_string(i+1)+"/"+to_string(imgPaths.size()) << flush;
+        
         Mat src = imread(imgPaths[i]);
 
         Mat gray;
@@ -28,15 +30,16 @@ void processTray(string trayPath, Mat& out) {
         GaussianBlur(gray, gray, Size(3,3), 1);
 
         Mat roiMask = Mat::zeros(gray.size(), CV_8UC3);
+        vector<Mat> platesMask, saladMask;
         vector<Rect> platesROI, saladROI, breadROI;
-        getPlatesROI(gray, roiMask, platesROI);
-        getSaladROI(gray, roiMask, saladROI);
+        getPlatesROI(gray, roiMask, platesROI, platesMask);
+        getSaladROI(gray, roiMask, saladROI, saladMask);
         getBreadROI(src-roiMask, breadROI);
 
         vector<pair<Rect,int>> trayItems;
         Mat foodMask = Mat::zeros(src.size(), CV_8U);
-        segmentAndDetectPlates(src & roiMask, platesROI, foodMask, trayItems);
-        segmentAndDetectSalad(src & roiMask, saladROI, foodMask, trayItems);
+        segmentAndDetectPlates(src, platesROI, platesMask, foodMask, trayItems);
+        segmentAndDetectSalad(src, saladROI, saladMask, foodMask, trayItems);
         segmentAndDetectBread(src, breadROI, foodMask, trayItems);
 
         trayOutputs.push_back(src);
@@ -93,7 +96,7 @@ int main(int argc, char** argv) {
 
     // Process each tray
     for (int i = 0; i < dirPaths.size(); i++) {
-        cout << "Processing tray at: " <<  dirPaths[i] << flush;
+        cout << "Processing tray at: " <<  dirPaths[i] << " Image: -/-" << flush;
         
         Mat trayResult;
         processTray(dirPaths[i], trayResult);

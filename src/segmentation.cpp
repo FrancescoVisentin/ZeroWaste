@@ -12,7 +12,7 @@ using namespace zw;
 
 // Using the saturation channel, extracts the main areas of interest from the
 // input image and initializes a cv::grubCut mask with possible foreground/background
-void detectMainComponents(const Mat& src, int lower, int upper, int minArea, Mat& mask){
+void detectMainComponents(const Mat& src, int lower, int upper, int minArea, Mat& mask) {
     Mat satMask;
     GaussianBlur(src, satMask, Size(5,5), 1);
     cvtColor(satMask, satMask, COLOR_BGR2HSV);
@@ -97,7 +97,7 @@ void filterCircles(const vector<Vec3f>& circles, vector<Vec3f>& filtered) {
 /*                             in segmentation.hpp                                   */
 /*                                                                                   */
 /*************************************************************************************/
-void zw::getPlatesROI(const Mat& gray, Mat& mask, vector<Rect>& platesROI) {
+void zw::getPlatesROI(const Mat& gray, Mat& roiMask, vector<Rect>& platesROI, vector<Mat>& platesMask) {
     vector<Vec3f> circles;
     HoughCircles(gray, circles, HOUGH_GRADIENT_ALT, 23, 20, 387, 0.75, 238);
 
@@ -111,13 +111,17 @@ void zw::getPlatesROI(const Mat& gray, Mat& mask, vector<Rect>& platesROI) {
         int height = (y+2*radius < gray.rows) ? 2*radius : gray.rows-y;
         Rect roi = Rect(x, y, width, height);
 
-        circle(mask, center, radius, Scalar::all(255), -1);
+        circle(roiMask, center, radius, Scalar::all(255), -1);
         platesROI.push_back(roi);
+
+        Mat mask = Mat::zeros(roi.size(), CV_8UC3);
+        circle(mask, Point(center.x-x, center.y-y), radius, Scalar::all(255), -1);
+        platesMask.push_back(mask);
     }
 }
 
 
-void zw::getSaladROI(const Mat& gray, Mat& mask, vector<Rect>& saladROI) {
+void zw::getSaladROI(const Mat& gray, Mat& roiMask, vector<Rect>& saladROI, vector<Mat>& saladMask) {
     vector<Vec3f> circles;
     HoughCircles(gray, circles, HOUGH_GRADIENT_ALT, 1.5, gray.rows/16, 310, 0.36, 150, 300);
 
@@ -134,8 +138,12 @@ void zw::getSaladROI(const Mat& gray, Mat& mask, vector<Rect>& saladROI) {
         int height = (y+2*radius < gray.rows) ? 2*radius : gray.rows-y;
         Rect roi = Rect(x, y, width, height);
 
-        circle(mask, center, radius, Scalar::all(255), -1);
+        circle(roiMask, center, radius, Scalar::all(255), -1);
         saladROI.push_back(roi);
+
+        Mat mask = Mat::zeros(roi.size(), CV_8UC3);
+        circle(mask, Point(center.x-x, center.y-y), radius, Scalar::all(255), -1);
+        saladMask.push_back(mask);
     }
 }
 
@@ -145,25 +153,25 @@ void zw::getBreadROI(const Mat& src, vector<Rect>& breadROI) {
 }
 
 
-void zw::segmentAndDetectPlates(const Mat& src, const vector<Rect>& platesROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+void zw::segmentAndDetectPlates(Mat& src, const vector<Rect>& platesROI, const vector<Mat>& platesMask, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
     for (int i = 0; i < platesROI.size(); i++) {
-        Mat roi = Mat(src, platesROI[i]);
+        Mat roi = Mat(src, platesROI[i]).clone();
+        roi &= platesMask[i];
 
         vector<int> plateItemsIDs;
         detect(roi, plateItemsIDs);
 
-        Mat tmp = roi.clone();
         for (int j = 0; j < plateItemsIDs.size(); j ++) {
             // Get the saturation range for the current plate item
             pair<int, int> satRange = saturationRange[plateItemsIDs[j]]; 
 
             // Computes a mask of probable foreground/background for the current food 
             Mat mask;
-            detectMainComponents(tmp, satRange.first, satRange.second, MIN_AREA_PLATES, mask);
+            detectMainComponents(roi, satRange.first, satRange.second, MIN_AREA_PLATES, mask);
             
             if (countNonZero(mask) > 0) {
                 // Segment the food starting from the mask
-                grabCutSeg(tmp, plateItemsIDs[j], mask);
+                grabCutSeg(roi, plateItemsIDs[j], mask);
 
                 // Add the detected segmented region to the tray mask
                 Mat(foodsMask, platesROI[i]) += mask;
@@ -174,28 +182,30 @@ void zw::segmentAndDetectPlates(const Mat& src, const vector<Rect>& platesROI, M
                 finalBox.y += platesROI[i].y;
                 trayItems.push_back(pair<Rect,int>(finalBox, plateItemsIDs[j]));
 
-                // Draws the overlay for showing the results
-                drawMask(roi, mask);
+                // Draws the overlay on the src image for showing the results
+                Mat srcROI = Mat(src, platesROI[i]);
+                drawMask(srcROI, mask);
 
                 // Removes the region segmented in this iteration
                 threshold(mask, mask, 0.5, 255, THRESH_BINARY);
                 cvtColor(mask, mask, COLOR_GRAY2BGR);
-                tmp -= mask;
+                roi -= mask;
+            
+                ///*                                                                  //TODO: remove
+                imshow("tmp", roi);
+                imshow("res", srcROI);
+                waitKey(0);
+                //*/
             }
-
-            ///*                                                                  //TODO: remove
-            imshow("tmp", tmp);
-            imshow("res", roi);
-            waitKey(0);
-            //*/
         }
     }
 }
 
 
-void zw::segmentAndDetectSalad(const Mat& src, const vector<Rect>& saladROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+void zw::segmentAndDetectSalad(Mat& src, const vector<Rect>& saladROI, const vector<Mat>& saladMask, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
     for (int i = 0; i < saladROI.size(); i++) {
-        Mat roi = Mat(src, saladROI[i]);
+        Mat roi = Mat(src, saladROI[i]).clone();
+        roi &= saladMask[i];
 
         // Get the salad saturation range
         pair<int, int> satRange = saturationRange[SALAD]; 
@@ -218,13 +228,14 @@ void zw::segmentAndDetectSalad(const Mat& src, const vector<Rect>& saladROI, Mat
             trayItems.push_back(pair<Rect,int>(finalBox, SALAD));
 
             // Draws the overlay for showing the results
-            drawMask(roi, mask);
+            Mat srcROI = Mat(src, saladROI[i]);
+            drawMask(srcROI, mask);
+        
+            ///*                                                                  //TODO: remove
+            imshow("res", srcROI);
+            waitKey(0);
+            //*/
         }
-
-        ///*                                                                  //TODO: remove
-        imshow("res", roi);
-        waitKey(0);
-        //*/
     }    
 
 }
