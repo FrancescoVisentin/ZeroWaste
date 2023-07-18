@@ -13,6 +13,39 @@ using namespace std;
 using namespace cv;
 using namespace zw;
 
+Mat getOutputImg(vector<Mat>& trayOutputs, vector<Mat>& detectedFoodsMask, const vector<vector<pair<Rect,int>>>& detectedItemsPerTray) {
+    Mat out = trayOutputs[0];
+    Mat tmp = detectedFoodsMask[0];
+    for (int i = 0; i < trayOutputs.size(); i++) {
+        for (int j = 0; j < detectedItemsPerTray[i].size(); j++) {
+            rectangle(detectedFoodsMask[i], detectedItemsPerTray[i][j].first, Scalar::all(255), 2);
+        }
+
+        if (i > 0) {
+            if (trayOutputs[i].size() != trayOutputs[0].size()) {
+                resize(trayOutputs[i], trayOutputs[i], trayOutputs[0].size());
+                resize(detectedFoodsMask[i], detectedFoodsMask[i], detectedFoodsMask[0].size());
+            }
+
+            hconcat(out, trayOutputs[i], out);
+            hconcat(tmp, detectedFoodsMask[i], tmp);
+        }
+    }
+
+    Mat out2;
+    cvtColor(tmp, out2, COLOR_GRAY2BGR);
+    for (int i = 0; i < tmp.rows; i++) {
+        for (int j = 0; j <tmp.cols; j++) {
+            int v = tmp.at<u_char>(i,j);
+            if (v > 0 && v < 255) out2.at<Vec3b>(i,j) = foodColors[v];
+        }
+    }
+
+    vconcat(out, out2, out);
+    return out;
+}
+
+
 void processTray(string trayPath, Mat& out) {
     vector<string> imgPaths;
     cv::utils::fs::glob(trayPath, "*.jpg", imgPaths, false, false);
@@ -65,19 +98,7 @@ void processTray(string trayPath, Mat& out) {
     }
 
     // Output image to show the results
-    out = trayOutputs[0];
-    Mat tmp = detectedFoodsMask[0]*10;
-    for (int i = 1; i < trayOutputs.size(); i++) {
-        if (trayOutputs[i].size() != trayOutputs[0].size()) {
-            resize(trayOutputs[i], trayOutputs[i], trayOutputs[0].size());
-            resize(detectedFoodsMask[i], detectedFoodsMask[i], detectedFoodsMask[0].size());
-        }
-
-        hconcat(out, trayOutputs[i], out);
-        hconcat(tmp, detectedFoodsMask[i]*10, tmp);
-    }
-    cvtColor(tmp, tmp, COLOR_GRAY2BGR);
-    vconcat(out, tmp, out);
+    out = getOutputImg(trayOutputs, detectedFoodsMask, detectedItemsPerTray);
 }
 
 
@@ -110,7 +131,7 @@ int main(int argc, char** argv) {
         cout << "\tDone!\n";
         
         // Show output
-        resize(trayResult, trayResult, Size(1280, 320));
+        resize(trayResult, trayResult, Size(1280, 640));
         imshow("Tray "+to_string(i+1), trayResult);
         waitKey(0);
     }

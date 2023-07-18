@@ -92,12 +92,7 @@ bool isFirstCourse(const Mat& src) {
         cornerAVG.push_back(avg/3);
     }
 
-    double maxAVG = *max_element(cornerAVG.begin(), cornerAVG.end());
-    cvtColor(satMask, satMask, COLOR_GRAY2BGR);
-    cout<<"\n"<<maxAVG<<"\n";
-    imshow("satMask", src&satMask);
-    imshow("sas", satMask);
-    
+    double maxAVG = *max_element(cornerAVG.begin(), cornerAVG.end());    
     return maxAVG < FIRST_COURSE_MAX_AVG;
 }
 

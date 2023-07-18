@@ -34,7 +34,7 @@ namespace zw {
         cv::Vec3b (120,   9, 146),    // Seafood salas
         cv::Vec3b ( 78, 139, 138),    // Beans
         cv::Vec3b (240, 142, 116),    // Basil potato
-        cv::Vec3b (214, 195, 224),    // Salad
+        cv::Vec3b (114, 145, 224),    // Salad
         cv::Vec3b (176,  98, 229)     // Bread
     };
 
