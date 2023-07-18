@@ -60,11 +60,12 @@ void detectMainComponents(const Mat& src, int lower, int upper, int minArea, Mat
         }
 
         ///*                                                                  //TODO: remove
-        imshow("Contours", dst);
-        imshow("Mask", mask*30);
+        //imshow("Contours", dst);
+        //imshow("Mask", mask*30);
         //*/
     }   
 }
+
 
 // Applies the cv::grubCut segmentation algorithm inside the area defined by the rect given in input 
 void grabCutSeg(const Mat& src, int id, Mat& mask) {
@@ -80,6 +81,7 @@ void grabCutSeg(const Mat& src, int id, Mat& mask) {
         }
     }
 }
+
 
 
 /*************************************************************************************/
@@ -143,23 +145,25 @@ void zw::getBreadROI(const Mat& src, vector<Rect>& breadROI) {
 }
 
 
-void zw::segmentAndDetectPlates(Mat& src, const vector<Rect>& platesROI, const vector<Mat>& platesMask, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+void zw::segmentAndDetectPlates(Mat& src, const vector<Rect>& platesROI, const vector<Mat>& platesMask, Classifier& cf, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+    vector<vector<int>> itemPerPlate;
+    cf.classifyAndUpdate(src, platesROI, platesMask, itemPerPlate);
+
     for (int i = 0; i < platesROI.size(); i++) {
         Mat roi = Mat(src, platesROI[i]).clone();
         roi &= platesMask[i];
 
-        vector<int> plateItemsIDs;
-        detect(roi, plateItemsIDs);
-
+        vector<int> plateItemsIDs = itemPerPlate[i];
         for (int j = 0; j < plateItemsIDs.size(); j ++) {
             // Get the saturation range for the current plate item
-            pair<int, int> satRange = saturationRange[plateItemsIDs[j]]; 
+            pair<int, int> satRange = saturationRange[plateItemsIDs[j]];
 
             // Computes a mask of probable foreground/background for the current food 
             Mat mask;
             detectMainComponents(roi, satRange.first, satRange.second, MIN_AREA_PLATES, mask);
             
-            if (countNonZero(mask) > 0) {
+            int maskArea = countNonZero(mask);
+            if (maskArea > 0 && maskArea < roi.rows*roi.cols) {
                 // Segment the food starting from the mask
                 grabCutSeg(roi, plateItemsIDs[j], mask);
 
@@ -182,9 +186,9 @@ void zw::segmentAndDetectPlates(Mat& src, const vector<Rect>& platesROI, const v
                 roi -= mask;
             
                 ///*                                                                  //TODO: remove
-                imshow("tmp", roi);
-                imshow("res", srcROI);
-                waitKey(0);
+                //imshow("tmp", roi);
+                //imshow("res", srcROI);
+                //waitKey(0);
                 //*/
             }
         }
@@ -192,7 +196,7 @@ void zw::segmentAndDetectPlates(Mat& src, const vector<Rect>& platesROI, const v
 }
 
 
-void zw::segmentAndDetectSalad(Mat& src, const vector<Rect>& saladROI, const vector<Mat>& saladMask, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+void zw::segmentSalad(Mat& src, const vector<Rect>& saladROI, const vector<Mat>& saladMask, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
     for (int i = 0; i < saladROI.size(); i++) {
         Mat roi = Mat(src, saladROI[i]).clone();
         roi &= saladMask[i];
@@ -222,8 +226,8 @@ void zw::segmentAndDetectSalad(Mat& src, const vector<Rect>& saladROI, const vec
             drawMask(srcROI, mask);
         
             ///*                                                                  //TODO: remove
-            imshow("res", srcROI);
-            waitKey(0);
+            //imshow("res", srcROI);
+            //waitKey(0);
             //*/
         }
     }    
@@ -231,7 +235,7 @@ void zw::segmentAndDetectSalad(Mat& src, const vector<Rect>& saladROI, const vec
 }
 
 
-void zw::segmentAndDetectBread(const Mat& src, const vector<Rect>& breadROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+void zw::segmentBread(Mat& src, const vector<Rect>& breadROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
 
 }
     

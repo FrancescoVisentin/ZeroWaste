@@ -17,6 +17,7 @@ void processTray(string trayPath, Mat& out) {
     vector<string> imgPaths;
     cv::utils::fs::glob(trayPath, "*.jpg", imgPaths, false, false);
 
+    Classifier cf;
     vector<Mat> trayOutputs;
     vector<Mat> detectedFoodsMask;
     vector<vector<pair<Rect,int>>> detectedItemsPerTray;
@@ -38,9 +39,9 @@ void processTray(string trayPath, Mat& out) {
 
         vector<pair<Rect,int>> trayItems;
         Mat foodMask = Mat::zeros(src.size(), CV_8U);
-        segmentAndDetectPlates(src, platesROI, platesMask, foodMask, trayItems);
-        segmentAndDetectSalad(src, saladROI, saladMask, foodMask, trayItems);
-        segmentAndDetectBread(src, breadROI, foodMask, trayItems);
+        segmentAndDetectPlates(src, platesROI, platesMask, cf, foodMask, trayItems);
+        segmentSalad(src, saladROI, saladMask, foodMask, trayItems);
+        segmentBread(src, breadROI, foodMask, trayItems);
 
         trayOutputs.push_back(src);
         detectedFoodsMask.push_back(foodMask);
@@ -65,12 +66,18 @@ void processTray(string trayPath, Mat& out) {
 
     // Output image to show the results
     out = trayOutputs[0];
+    Mat tmp = detectedFoodsMask[0]*10;
     for (int i = 1; i < trayOutputs.size(); i++) {
-        if (trayOutputs[i].size() != trayOutputs[0].size())
+        if (trayOutputs[i].size() != trayOutputs[0].size()) {
             resize(trayOutputs[i], trayOutputs[i], trayOutputs[0].size());
+            resize(detectedFoodsMask[i], detectedFoodsMask[i], detectedFoodsMask[0].size());
+        }
 
         hconcat(out, trayOutputs[i], out);
+        hconcat(tmp, detectedFoodsMask[i]*10, tmp);
     }
+    cvtColor(tmp, tmp, COLOR_GRAY2BGR);
+    vconcat(out, tmp, out);
 }
 
 

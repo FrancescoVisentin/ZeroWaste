@@ -37,9 +37,9 @@ namespace zw {
     void getBreadROI(const cv::Mat& src, std::vector<cv::Rect>& breadROI);
 
     // Functions that, given the ROIs, segment the regions and label the detected foods
-    void segmentAndDetectPlates(cv::Mat& src, const std::vector<cv::Rect>& platesROI, const std::vector<cv::Mat>& platesMask, cv::Mat& foodsMask, std::vector<std::pair<cv::Rect,int>>& trayItems);
-    void segmentAndDetectSalad(cv::Mat& src, const std::vector<cv::Rect>& saladROI, const std::vector<cv::Mat>& saladMask, cv::Mat& foodsMask, std::vector<std::pair<cv::Rect,int>>& trayItems);
-    void segmentAndDetectBread(cv::Mat& src, const std::vector<cv::Rect>& breadROI, cv::Mat& foodsMask, std::vector<std::pair<cv::Rect,int>>& trayItems);
+    void segmentAndDetectPlates(cv::Mat& src, const std::vector<cv::Rect>& platesROI, const std::vector<cv::Mat>& platesMask, zw::Classifier& cf, cv::Mat& foodsMask, std::vector<std::pair<cv::Rect,int>>& trayItems);
+    void segmentSalad(cv::Mat& src, const std::vector<cv::Rect>& saladROI, const std::vector<cv::Mat>& saladMask, cv::Mat& foodsMask, std::vector<std::pair<cv::Rect,int>>& trayItems);
+    void segmentBread(cv::Mat& src, const std::vector<cv::Rect>& breadROI, cv::Mat& foodsMask, std::vector<std::pair<cv::Rect,int>>& trayItems);
 }
 
 #endif
