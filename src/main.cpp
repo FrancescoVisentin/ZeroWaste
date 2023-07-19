@@ -83,24 +83,25 @@ void processTray(string trayPath, Mat& out) {
     }
 
     // Saves segmentation mask computed for each tray
-    cv::utils::fs::createDirectory(trayPath+"/masks");
+    cv::utils::fs::createDirectory(trayPath+"/output_masks");
     for (int i = 0; i < detectedFoodsMask.size(); i++) {
-        imwrite(trayPath+"/masks/img_"+to_string(i)+".jpg", detectedFoodsMask[i]);
+        imwrite(trayPath+"/output_masks/img_"+to_string(i)+".jpg", detectedFoodsMask[i]);
     }
 
     // Saves bounding boxes computed for each tray
-    cv::utils::fs::createDirectory(trayPath+"/bounding_boxes");
+    cv::utils::fs::createDirectory(trayPath+"/output_bounding_boxes");
     for (int i = 0; i < detectedItemsPerTray.size(); i++) {
-        ofstream file(trayPath+"/bounding_boxes/img_"+to_string(i)+".txt");
+        ofstream file(trayPath+"/output_bounding_boxes/img_"+to_string(i)+".txt");
         for (int j = 0; j < detectedItemsPerTray[i].size(); j++) {
-            file << "ID: " << detectedItemsPerTray[i][j].second << " " << detectedItemsPerTray[i][j].first << "\n"; 
+            Rect bb = detectedItemsPerTray[i][j].first;
+            file << "ID: " << detectedItemsPerTray[i][j].second << "; [" << bb.x << ", " << bb.y << ", " << bb.width << ", " << bb.height << "]\n"; 
         }
         file.close();
     }
 
     // Computes the required metrics for the tray
     averagePrecision(detectedItemsPerTray, trayPath);
-    IoU(detectedItemsPerTray, trayPath);
+    mIoU(detectedItemsPerTray, trayPath);
     leftoverRatio(detectedFoodsMask, trayPath);
 
     // Output image to show the results
