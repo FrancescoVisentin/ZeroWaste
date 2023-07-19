@@ -5,8 +5,8 @@ using namespace cv;
 using namespace zw;
 
 /*************************************************************************************/
-/*                      Utility functions used by the segmentation                   */
-/*                        and detection functions defined below                      */
+/*                    Utility functions used by the classification                   */
+/*                             functions defined below                               */
 /*                                                                                   */
 /*************************************************************************************/
 
@@ -99,13 +99,61 @@ bool isFirstCourse(const Mat& src) {
 // Given a plate return an ID describing its content.
 // The IDs are consistent with the one defined in classifier.hpp
 int classifyPlate(const cv::Mat& src, bool isFirstCourse) {
-    string model = (isFirstCourse) ? "../model/modelKnn1.yml" : "../model/modelKnn2.yml";
-    Ptr<ml::KNearest> knn = ml::KNearest::load(model);
+    // Extract a saturation mask for the plate
+    Mat satMask;
+    cvtColor(src, satMask, COLOR_BGR2HSV);
+    extractChannel(satMask, satMask, 1);
+    inRange(satMask, 80, 250, satMask);
 
-    Mat hist;
-    computeHist(src, Mat(), hist);
+    // Refine the mask
+    Mat element = getStructuringElement(MORPH_ELLIPSE, Size(20,20));
+    morphologyEx(satMask, satMask, MORPH_CLOSE, element);
 
-    return knn->predict(hist);
+    // K-means features considering only the pixels in the mask
+    Mat features;
+    for (int i = 0; i < src.rows; i++) {
+        for (int j = 0; j < src.cols; j++) {
+            if (satMask.at<uchar>(i,j) != 0 ) {
+                Mat tmp = Mat(1,3, CV_32F);
+                for (int z = 0; z < 3; z++) 
+                    tmp.at<float>(0, z) = src.at<Vec3b>(i,j)[z];
+
+                features.push_back(tmp);
+            }
+        }
+    }
+
+    // Find the 3 most dominant colors in the image by clustering with kmeans
+    Mat labels, colors;
+    TermCriteria criteria = TermCriteria(TermCriteria::MAX_ITER, 15, 1.0);
+    kmeans(features, 3, labels, criteria, 5, KMEANS_PP_CENTERS, colors);
+    
+    colors.convertTo(colors, CV_8UC3);
+
+    // Offest used to distinguish between first and second course ref colors in dishRefColors
+    int offset = (isFirstCourse) ? 0 : 5;
+    
+    // Compute the sum distances of the 3 most dominat colar to the 3 reference colors for each dish
+    // in the same category (in both cases we have 5 fisrt courses and 5 second courses) 
+    vector<double> refDist;
+    for (int i = 0; i < 5; i++) {
+        // Distance with respect to the current triplet of ref colors 
+        double colorDist = 0;
+        for (int j = 0; j < 3; j++) {
+            Vec3b c = colors.at<Vec3b>(j);
+            // Given a dominant color consider only its distance from the closest ref color for the current dish type 
+            double minDist = 10000;
+            for (int k = 0; k < 3; k++) {
+                double tmp = norm(c, dishRefColors[i+offset][k], NORM_L2);
+                if (tmp < minDist) minDist = tmp;
+            }
+            colorDist += minDist;
+        }
+        refDist.push_back(colorDist);
+    }
+
+    int dishID =  offset + distance(refDist.begin(), min_element(refDist.begin(), refDist.end()));     
+    return dishID;
 }
 
 
@@ -134,7 +182,7 @@ void zw::Classifier::classifyAndUpdate(const Mat& src, const vector<Rect>& plate
             computeHist(roi, satMask, hist);
 
             trayRefHist.push_back(pair<Mat, int>(hist, plateID));
-            itemPerPlate.push_back(platesContent[plateID]);
+            itemPerPlate.push_back(dishContent[plateID]);
 
             initialized = true;
         }
@@ -173,21 +221,21 @@ void zw::Classifier::classifyAndUpdate(const Mat& src, const vector<Rect>& plate
         histMinDist.push_back(pair<double, int>(*min, distance(histDist.begin(), min)));
     }
 
-    // We assume to have at most 2 main corses per tray
+    // We assume to have at most 2 main courses per tray
     if (histograms.size() == 1) {
         // Update the reference histograms
         int id1 = histMinDist[0].second;
         trayRefHist[id1].first = histograms[0];
 
         // Assigns a label to the plate
-        itemPerPlate.push_back(platesContent[trayRefHist[id1].second]);
+        itemPerPlate.push_back(dishContent[trayRefHist[id1].second]);
     }
     else if (histograms.size() == 2) {
         int id1 = histMinDist[0].second;
         int id2 = histMinDist[1].second;
         double d1 = histMinDist[0].first; 
         double d2 = histMinDist[1].first;
-        // Udjust the indices if both plates match to the same hist
+        // Adjust the indices if both plates match to the same hist
         if (id1 == id2) {
             if (d1 < d2) id2 = (id1 == 0) ? 1 : 0;
             else         id1 = (id2 == 0) ? 1 : 0;
@@ -197,7 +245,7 @@ void zw::Classifier::classifyAndUpdate(const Mat& src, const vector<Rect>& plate
         trayRefHist[id2].first = histograms[1];
 
         // Assigns a label to each plate
-        itemPerPlate.push_back(platesContent[trayRefHist[id1].second]);
-        itemPerPlate.push_back(platesContent[trayRefHist[id2].second]);
+        itemPerPlate.push_back(dishContent[trayRefHist[id1].second]);
+        itemPerPlate.push_back(dishContent[trayRefHist[id2].second]);
     }
 }

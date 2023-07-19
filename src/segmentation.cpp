@@ -51,6 +51,10 @@ void detectMainComponents(const Mat& src, int lower, int upper, int minArea, Mat
                 rectangle(dst, contoursRect[i], 255);
                 rectangle(mask, contoursRect[i], GC_PR_BGD, -1);
             }
+            else {
+                // Remove contour from satMask
+                drawContours(satMask, contours, i, 0, -1);
+            }
         }
 
         for (int i = 0; i < mask.rows; i++) {
@@ -59,10 +63,10 @@ void detectMainComponents(const Mat& src, int lower, int upper, int minArea, Mat
             }
         }
 
-        ///*                                                                  //TODO: remove
-        //imshow("Contours", dst);
-        //imshow("Mask", mask*30);
-        //*/
+        /* Uncomment to view the mask and the contours
+        imshow("Contours", dst);
+        imshow("Mask", mask*30);
+        */
     }   
 }
 
@@ -167,29 +171,32 @@ void zw::segmentAndDetectPlates(Mat& src, const vector<Rect>& platesROI, const v
                 // Segment the food starting from the mask
                 grabCutSeg(roi, plateItemsIDs[j], mask);
 
-                // Add the detected segmented region to the tray mask
-                Mat(foodsMask, platesROI[i]) += mask;
+                int detectedArea = countNonZero(mask);
+                if (detectedArea > MIN_DETECTED_AREA) {
+                    // Add the detected segmented region to the tray mask
+                    Mat(foodsMask, platesROI[i]) += mask;
 
-                // Save the bounding box of the above detected region 
-                Rect finalBox = boundingRect(mask);
-                finalBox.x += platesROI[i].x;
-                finalBox.y += platesROI[i].y;
-                trayItems.push_back(pair<Rect,int>(finalBox, plateItemsIDs[j]));
+                    // Save the bounding box of the above detected region 
+                    Rect finalBox = boundingRect(mask);
+                    finalBox.x += platesROI[i].x;
+                    finalBox.y += platesROI[i].y;
+                    trayItems.push_back(pair<Rect,int>(finalBox, plateItemsIDs[j]));
 
-                // Draws the overlay on the src image for showing the results
-                Mat srcROI = Mat(src, platesROI[i]);
-                drawMask(srcROI, mask);
+                    // Draws the overlay on the src image for showing the results
+                    Mat srcROI = Mat(src, platesROI[i]);
+                    drawMask(srcROI, mask);
 
-                // Removes the region segmented in this iteration
-                threshold(mask, mask, 0.5, 255, THRESH_BINARY);
-                cvtColor(mask, mask, COLOR_GRAY2BGR);
-                roi -= mask;
-            
-                ///*                                                                  //TODO: remove
-                //imshow("tmp", roi);
-                //imshow("res", srcROI);
-                //waitKey(0);
-                //*/
+                    // Removes the region segmented in this iteration
+                    threshold(mask, mask, 0.5, 255, THRESH_BINARY);
+                    cvtColor(mask, mask, COLOR_GRAY2BGR);
+                    roi -= mask;
+                
+                    /* Uncomment to view the mask and the contours
+                    imshow("tmp", roi);
+                    imshow("res", srcROI);
+                    waitKey(0);
+                    */
+                }
             }
         }
     }
@@ -212,23 +219,27 @@ void zw::segmentSalad(Mat& src, const vector<Rect>& saladROI, const vector<Mat>&
             // Segment the food starting from the mask
             grabCutSeg(roi, SALAD, mask);
 
-            // Add the detected segmented region to the tray mask
-            Mat(foodsMask, saladROI[i]) += mask;
 
-            // Save the bounding box of the above detected region 
-            Rect finalBox = boundingRect(mask);
-            finalBox.x += saladROI[i].x;
-            finalBox.y += saladROI[i].y;
-            trayItems.push_back(pair<Rect,int>(finalBox, SALAD));
+            int detectedArea = countNonZero(mask);
+            if (detectedArea > MIN_DETECTED_AREA) {
+                // Add the detected segmented region to the tray mask
+                Mat(foodsMask, saladROI[i]) += mask;
 
-            // Draws the overlay for showing the results
-            Mat srcROI = Mat(src, saladROI[i]);
-            drawMask(srcROI, mask);
-        
-            ///*                                                                  //TODO: remove
-            //imshow("res", srcROI);
-            //waitKey(0);
-            //*/
+                // Save the bounding box of the above detected region 
+                Rect finalBox = boundingRect(mask);
+                finalBox.x += saladROI[i].x;
+                finalBox.y += saladROI[i].y;
+                trayItems.push_back(pair<Rect,int>(finalBox, SALAD));
+
+                // Draws the overlay for showing the results
+                Mat srcROI = Mat(src, saladROI[i]);
+                drawMask(srcROI, mask);
+            
+                /*                                                                  //TODO: remove
+                //imshow("res", srcROI);
+                //waitKey(0);
+                */
+            }
         }
     }    
 

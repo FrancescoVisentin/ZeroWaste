@@ -11,21 +11,22 @@
 namespace zw {
     // Constant values/thresholds used inside the code
     constexpr int MIN_AREA_SALAD = 1000;
-    constexpr int MIN_AREA_PLATES = 1000;
+    constexpr int MIN_AREA_PLATES = 3500;
     constexpr int MIN_AREA_BREAD = 1000;
+    constexpr int MIN_DETECTED_AREA = 500;
 
     const std::array<std::pair<int,int>, 14> saturationRange = {
         std::pair<int, int> (  0,   0),    // Background
-        std::pair<int, int> (190, 255),    // Pasta pesto
-        std::pair<int, int> (190, 255),    // Pasta tomato
-        std::pair<int, int> (190, 255),    // Pasta meat sauce
-        std::pair<int, int> (190, 255),    // Pasta clams and mussels
-        std::pair<int, int> (190, 255),    // Rice peppers and peas
-        std::pair<int, int> ( 69,  86),    // Pork cutlet
+        std::pair<int, int> (200, 235),    // Pasta pesto
+        std::pair<int, int> (145, 175),    // Pasta tomato
+        std::pair<int, int> (200, 245),    // Pasta meat sauce
+        std::pair<int, int> (190, 240),    // Pasta clams and mussels
+        std::pair<int, int> (125, 160),    // Rice peppers and peas
+        std::pair<int, int> ( 69, 100),    // Pork cutlet 69-86
         std::pair<int, int> (166, 170),    // Fish cutlet
-        std::pair<int, int> (204, 225),    // Rabbit
-        std::pair<int, int> (  0, 255),    // Seafood salas
-        std::pair<int, int> (172, 230),    // Beans
+        std::pair<int, int> (156, 166),    // Rabbit
+        std::pair<int, int> (197, 202),    // Seafood salas 197-202 close 15
+        std::pair<int, int> (172, 177),    // Beans 172-230
         std::pair<int, int> ( 60,  98),    // Basil potato
         std::pair<int, int> (182, 211),    // Salad
         std::pair<int, int> ( 60,  98)     // Bread
