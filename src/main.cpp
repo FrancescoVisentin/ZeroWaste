@@ -4,6 +4,7 @@
 #include <opencv2/imgproc.hpp>
 #include <segmentation.hpp>
 #include <classifier.hpp>
+#include <metrics.hpp>
 #include <common.hpp>
 #include <iostream>
 #include <fstream>
@@ -96,6 +97,11 @@ void processTray(string trayPath, Mat& out) {
         }
         file.close();
     }
+
+    // Computes the required metrics for the tray
+    averagePrecision(detectedItemsPerTray, trayPath);
+    IoU(detectedItemsPerTray, trayPath);
+    leftoverRatio(detectedFoodsMask, trayPath);
 
     // Output image to show the results
     out = getOutputImg(trayOutputs, detectedFoodsMask, detectedItemsPerTray);

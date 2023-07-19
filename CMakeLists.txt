@@ -9,6 +9,7 @@ add_executable(main
     src/segmentation.cpp
     src/classifier.cpp
     src/segmentation_utils.cpp
+    src/metrics.cpp
 )
 
 target_link_libraries(main ${OpenCV_LIBS})
