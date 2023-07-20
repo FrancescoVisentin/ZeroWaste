@@ -322,7 +322,7 @@ void zw::segmentAndDetectBread(Mat& src, const Mat& roiMask, Mat& foodsMask, vec
             drawMask(src, segMask);
         
             
-            // Uncomment to view the salad segmentation
+            // Uncomment to view the bread segmentation
             //imshow("res", src);
             //waitKey(0);
         }
