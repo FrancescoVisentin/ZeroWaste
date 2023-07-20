@@ -157,6 +157,7 @@ void zw::segmentAndDetectPlates(Mat& src, const vector<Rect>& platesROI, const v
         Mat roi = Mat(src, platesROI[i]).clone();
         roi &= platesMask[i];
 
+        Mat segmentedRegions = Mat::zeros(roi.size(), CV_8U);
         vector<int> plateItemsIDs = itemPerPlate[i];
         for (int j = 0; j < plateItemsIDs.size(); j ++) {
             // Get the saturation range for the current plate item
@@ -165,6 +166,9 @@ void zw::segmentAndDetectPlates(Mat& src, const vector<Rect>& platesROI, const v
             // Computes a mask of probable foreground/background for the current food 
             Mat mask;
             detectMainComponents(roi, satRange.first, satRange.second, MIN_AREA_PLATES, mask);
+            
+            // Avoids overlaps with already segmented regions
+            mask -= segmentedRegions;
             
             int maskArea = countNonZero(mask);
             if (maskArea > 0 && maskArea < roi.rows*roi.cols) {
@@ -188,6 +192,7 @@ void zw::segmentAndDetectPlates(Mat& src, const vector<Rect>& platesROI, const v
 
                     // Removes the region segmented in this iteration
                     threshold(mask, mask, 0.5, 255, THRESH_BINARY);
+                    segmentedRegions += mask;
                     cvtColor(mask, mask, COLOR_GRAY2BGR);
                     roi -= mask;
                 
@@ -218,7 +223,6 @@ void zw::segmentSalad(Mat& src, const vector<Rect>& saladROI, const vector<Mat>&
         if (countNonZero(mask) > 0) {
             // Segment the food starting from the mask
             grabCutSeg(roi, SALAD, mask);
-
 
             int detectedArea = countNonZero(mask);
             if (detectedArea > MIN_DETECTED_AREA) {
