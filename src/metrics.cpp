@@ -65,6 +65,8 @@ void zw::averagePrecision(const vector<vector<pair<Rect,int>>>& detectedItemsPer
         }
     }
 
+    // Ground truth was not loaded correctly
+    if (totalGroundTruths <= 0 ) return;
     
     // Calculates AP for each detected class
     vector<double> classAP;
