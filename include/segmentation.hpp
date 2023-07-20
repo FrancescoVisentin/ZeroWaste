@@ -11,7 +11,7 @@
 namespace zw {
     // Constant values/thresholds used inside the code
     constexpr int MIN_DETECTED_AREA = 500;
-    constexpr int MIN_AREA_SALAD = 1000;
+    constexpr int MIN_AREA_SALAD = 5500;
     constexpr int MIN_AREA_PLATES = 3500;
     constexpr int MIN_AREA_BREAD = 7000;
     constexpr int BREAD_COLOR_THRESHOLD = 150;
@@ -24,13 +24,13 @@ namespace zw {
         std::pair<int, int> (200, 245),    // Pasta meat sauce
         std::pair<int, int> (190, 240),    // Pasta clams and mussels
         std::pair<int, int> (125, 160),    // Rice peppers and peas
-        std::pair<int, int> ( 69, 100),    // Pork cutlet 69-86
+        std::pair<int, int> ( 69, 100),    // Pork cutlet 
         std::pair<int, int> (166, 170),    // Fish cutlet
         std::pair<int, int> (156, 166),    // Rabbit
-        std::pair<int, int> (197, 202),    // Seafood salas 197-202 close 15
-        std::pair<int, int> (172, 177),    // Beans 172-230
+        std::pair<int, int> (197, 202),    // Seafood salad
+        std::pair<int, int> (172, 200),    // Beans 
         std::pair<int, int> ( 60,  98),    // Basil potato
-        std::pair<int, int> (182, 211),    // Salad
+        std::pair<int, int> (160, 228),    // Salad
         std::pair<int, int> ( 90, 129)     // Bread
     };
 
