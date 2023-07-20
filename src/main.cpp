@@ -99,7 +99,7 @@ void processTray(string trayPath, Mat& out) {
     }
 
     // Computes the required metrics for the tray
-    averagePrecision(detectedItemsPerTray, trayPath);
+    mAP(detectedItemsPerTray, trayPath);
     mIoU(detectedItemsPerTray, trayPath);
     leftoverRatio(detectedFoodsMask, trayPath);
 

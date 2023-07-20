@@ -11,7 +11,7 @@ The sample testset has been included inside the "inputs" subdirectory.
 To execute the code run the executable specifying as first parameter the path to the input dataset
     ./main <base-path-to-input-trays>
 
-To run on the sample testset provided with the homework hence do:
+To run on the sample testset provided with the homework hence do (assuming to be inside the build directory):
     ./main ../inputs/Food_leftover_dataset/
 
 

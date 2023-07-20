@@ -4,7 +4,13 @@ using namespace std;
 using namespace cv;
 using namespace zw;
 
-void zw::averagePrecision(const vector<vector<pair<Rect,int>>>& detectedItemsPerTray, std::string trayPath) {
+
+/*************************************************************************************/
+/*                     Definitions of the functions declared                         */
+/*                              in metrics.hpp                                       */
+/*                                                                                   */
+/*************************************************************************************/
+void zw::mAP(const vector<vector<pair<Rect,int>>>& detectedItemsPerTray, std::string trayPath) {
     int totalGroundTruths = 0;
     vector<vector<int>> classPredictions (14, vector<int>(0));
     for (int i = 0; i < detectedItemsPerTray.size()-1; i++) {
@@ -124,6 +130,7 @@ void zw::averagePrecision(const vector<vector<pair<Rect,int>>>& detectedItemsPer
     file << "\nFOOD LOCALIZATION (mAP)\n";
     file << "Mean average precision over " << classAP.size() << " detected items in the tray: \tmAP = " << mAP << "\n";
 }
+
 
 void zw::mIoU(const vector<vector<pair<Rect,int>>>& detectedItemsPerTray, std::string trayPath) {
     // Computes mIoU for the base image and leftovers 1 and 2
