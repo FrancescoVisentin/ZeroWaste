@@ -139,7 +139,8 @@ int main(int argc, char** argv) {
         // Show output
         resize(trayResult, trayResult, Size(1280, 640));
         imshow("Tray "+to_string(i+1), trayResult);
-        waitKey(0);
+        if (i == dirPaths.size()-1) waitKey(0);
+        else                        waitKey(500);
     }
     
     return 0;
