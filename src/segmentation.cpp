@@ -36,7 +36,7 @@ void detectMainComponents(const Mat& src, int lower, int upper, int minArea, Mat
     vector<Rect> contoursRect;
     for (int i = 0; i < contours.size(); i++) {
         vector<Point> contoursPoly;
-        approxPolyDP( Mat(contours[i]), contoursPoly, 3, true );
+        approxPolyDP(Mat(contours[i]), contoursPoly, 3, true);
         
         contoursRect.push_back(boundingRect(contoursPoly));
     }
@@ -63,10 +63,9 @@ void detectMainComponents(const Mat& src, int lower, int upper, int minArea, Mat
             }
         }
 
-        /* Uncomment to view the mask and the contours
-        imshow("Contours", dst);
-        imshow("Mask", mask*30);
-        */
+        // Uncomment to view the mask and the contours
+        //imshow("Contours", dst);
+        //imshow("Mask", mask*30);
     }   
 }
 
@@ -77,7 +76,6 @@ void grabCutSeg(const Mat& src, int id, Mat& mask) {
     grabCut(src, mask, Rect(), bgdModel, fgdModel, 5, GC_INIT_WITH_MASK);
    
     // Assigns to the pixels in the foreground the given food id
-    static_cast<u_char>(id);
     for (int i = 0; i < mask.rows; i++) {
         for (int j = 0; j < mask.cols; j++) {
             if (mask.at<u_char>(i,j) == GC_FGD || mask.at<u_char>(i,j) == GC_PR_FGD) mask.at<u_char>(i,j) = id;
@@ -144,11 +142,6 @@ void zw::getSaladROI(const Mat& gray, Mat& roiMask, vector<Rect>& saladROI, vect
 }
 
 
-void zw::getBreadROI(const Mat& src, vector<Rect>& breadROI) {
-      
-}
-
-
 void zw::segmentAndDetectPlates(Mat& src, const vector<Rect>& platesROI, const vector<Mat>& platesMask, Classifier& cf, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
     vector<vector<int>> itemPerPlate;
     cf.classifyAndUpdate(src, platesROI, platesMask, itemPerPlate);
@@ -196,11 +189,10 @@ void zw::segmentAndDetectPlates(Mat& src, const vector<Rect>& platesROI, const v
                     cvtColor(mask, mask, COLOR_GRAY2BGR);
                     roi -= mask;
                 
-                    /* Uncomment to view the mask and the contours
-                    imshow("tmp", roi);
-                    imshow("res", srcROI);
-                    waitKey(0);
-                    */
+                    // Uncomment to view the plate item segmentation
+                    //imshow("tmp", roi);
+                    //imshow("res", srcROI);
+                    //waitKey(0);
                 }
             }
         }
@@ -220,7 +212,8 @@ void zw::segmentSalad(Mat& src, const vector<Rect>& saladROI, const vector<Mat>&
         Mat mask;
         detectMainComponents(roi, satRange.first, satRange.second, MIN_AREA_SALAD, mask);
         
-        if (countNonZero(mask) > 0) {
+        int maskArea = countNonZero(mask);
+        if (maskArea > 0 && maskArea < roi.rows*roi.cols) {
             // Segment the food starting from the mask
             grabCutSeg(roi, SALAD, mask);
 
@@ -239,10 +232,9 @@ void zw::segmentSalad(Mat& src, const vector<Rect>& saladROI, const vector<Mat>&
                 Mat srcROI = Mat(src, saladROI[i]);
                 drawMask(srcROI, mask);
             
-                /*                                                                  //TODO: remove
+                // Uncomment to view the salad segmentation
                 //imshow("res", srcROI);
                 //waitKey(0);
-                */
             }
         }
     }    
@@ -250,7 +242,90 @@ void zw::segmentSalad(Mat& src, const vector<Rect>& saladROI, const vector<Mat>&
 }
 
 
-void zw::segmentBread(Mat& src, const vector<Rect>& breadROI, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+void zw::segmentAndDetectBread(Mat& src, const Mat& roiMask, Mat& foodsMask, vector<pair<Rect,int>>& trayItems) {
+    Mat blurred = src-roiMask;
+    blur(blurred, blurred, Size(11,11));
 
+    // First filtering based on a saturation range, will identify some false positives
+    Mat mask;
+    pair<int, int> satRange = saturationRange[BREAD];
+    detectMainComponents(blurred, satRange.first, satRange.second, MIN_AREA_BREAD, mask);
+
+    vector<vector<Point>> contours;
+    findContours(mask, contours, noArray(), RETR_TREE, CHAIN_APPROX_NONE);
+
+    // Region of interest of the zones that may contain the bread
+    vector<Rect> contoursRect;
+    for (int i = 0; i < contours.size(); i++) {
+        vector<Point> contoursPoly;
+        approxPolyDP(Mat(contours[i]), contoursPoly, 3, true);
+        
+        // Filters the detected zones based on their shape (bread shape is usually similar to the a square)
+        Rect r = boundingRect(contoursPoly);
+        if (r.width > r.height  && 1.*r.height/r.width > BREAD_AREA_THRESHOLD) contoursRect.push_back(r);
+        if (r.width <= r.height  && 1.*r.width/r.height > BREAD_AREA_THRESHOLD) contoursRect.push_back(r);
+    }
+
+    // Filter the zones considering their dominant colors extracted with kmeans and build a segmentation mask accordingly
+    Mat segMask = Mat::zeros(src.size(), CV_8U);
+    for (int k = 0; k < contoursRect.size(); k++) {
+        Mat roi = Mat(blurred, contoursRect[k]);
+
+        Mat features = Mat(roi.rows*roi.cols, 3, CV_32F);
+        for (int i = 0; i < roi.rows; i++)
+            for (int j = 0; j < roi.cols; j++)
+                for (int z = 0; z < 3; z++)
+                    features.at<float>(i*roi.cols + j, z) = roi.at<Vec3b>(i,j)[z];
+
+        // Find the 3 most dominant colors in the image by clustering with kmeans
+        Mat labels, colors;
+        TermCriteria criteria = TermCriteria(TermCriteria::MAX_ITER, 15, 1.0);
+        kmeans(features, 3, labels, criteria, 5, KMEANS_PP_CENTERS, colors);
+        colors.convertTo(colors, CV_8UC3);
+        
+        // Bread reference color
+        array<Vec3b,3> ref = dishRefColors[10];
+        
+        // Distance with respect to the current triplet of ref colors 
+        double colorDist = 0;
+        for (int j = 0; j < 3; j++) {
+            Vec3b c = colors.at<Vec3b>(j);
+            // Given a dominant color consider only its distance from the closest ref color for the current dish type 
+            double minDist = 10000;
+            for (int k = 0; k < 3; k++) {
+                double tmp = norm(c, ref[k], NORM_L2);
+                if (tmp < minDist) minDist = tmp;
+            }
+            colorDist += minDist;
+        }
+        
+        if (colorDist < BREAD_COLOR_THRESHOLD) {
+            Mat(mask, contoursRect[k]).copyTo(segMask(contoursRect[k]));
+        }
+    }
+    
+    int maskArea = countNonZero(segMask);
+    if (maskArea > 0 && maskArea < src.rows*src.cols) {
+        // Segment the food starting from the mask
+        grabCutSeg(blurred, BREAD, segMask);
+        
+        int detectedArea = countNonZero(segMask);
+        if (detectedArea > MIN_DETECTED_AREA) {
+            // Add the detected segmented region to the tray mask
+            foodsMask += segMask;
+
+            // Save the bounding box of the above detected region 
+            Rect finalBox = boundingRect(segMask);
+            trayItems.push_back(pair<Rect,int>(finalBox, BREAD));
+
+            // Draws the overlay for showing the results
+            drawMask(src, segMask);
+        
+            
+            // Uncomment to view the salad segmentation
+            //imshow("res", src);
+            //waitKey(0);
+        }
+    }
 }
     

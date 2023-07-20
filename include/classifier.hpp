@@ -28,7 +28,7 @@ namespace zw {
     };
 
     // 3 reference dominant colors for each dish
-    const std::array<std::array<cv::Vec3b,3>,10>  dishRefColors = {
+    const std::array<std::array<cv::Vec3b,3>,11>  dishRefColors = {
         std::array<cv::Vec3b,3> {cv::Vec3b( 95, 160, 200), cv::Vec3b( 30,  80, 150), cv::Vec3b( 10,  15,  65)},    // Pasta tomato
         std::array<cv::Vec3b,3> {cv::Vec3b(100, 170, 190), cv::Vec3b( 30, 100, 130), cv::Vec3b( 10,  40,  50)},    // Pasta pesto
         std::array<cv::Vec3b,3> {cv::Vec3b(115, 170, 200), cv::Vec3b( 45, 100, 150), cv::Vec3b( 10,  30,  60)},    // Pasta meat sauce
@@ -38,7 +38,8 @@ namespace zw {
         std::array<cv::Vec3b,3> {cv::Vec3b(120, 145, 180), cv::Vec3b( 60,  80, 125), cv::Vec3b( 15,  25,  45)},    // Pork cutlet and beans
         std::array<cv::Vec3b,3> {cv::Vec3b(105, 135, 170), cv::Vec3b( 40,  65, 110), cv::Vec3b( 10,  15,  34)},    // Rabbit and beans
         std::array<cv::Vec3b,3> {cv::Vec3b(120, 160, 195), cv::Vec3b( 45,  75, 120), cv::Vec3b( 10,  20,  40)},    // Rabbit
-        std::array<cv::Vec3b,3> {cv::Vec3b(130, 175, 200), cv::Vec3b( 60, 100, 140), cv::Vec3b( 15,  25,  55)}     // Seafood salad, potatoes and beans
+        std::array<cv::Vec3b,3> {cv::Vec3b(130, 175, 200), cv::Vec3b( 60, 100, 140), cv::Vec3b( 15,  25,  55)},    // Seafood salad, potatoes and beans
+        std::array<cv::Vec3b,3> {cv::Vec3b(175, 200, 230), cv::Vec3b(115, 145, 175), cv::Vec3b( 55,  85, 115)}     // Bread
     };
 
     //Object used to classify the plates found inside a tray

@@ -69,13 +69,12 @@ void processTray(string trayPath, Mat& out) {
         vector<Rect> platesROI, saladROI, breadROI;
         getPlatesROI(gray, roiMask, platesROI, platesMask);
         getSaladROI(gray, roiMask, saladROI, saladMask);
-        getBreadROI(src-roiMask, breadROI);
 
         vector<pair<Rect,int>> trayItems;
         Mat foodMask = Mat::zeros(src.size(), CV_8U);
         segmentAndDetectPlates(src, platesROI, platesMask, cf, foodMask, trayItems);
+        segmentAndDetectBread(src, roiMask, foodMask, trayItems);
         segmentSalad(src, saladROI, saladMask, foodMask, trayItems);
-        segmentBread(src, breadROI, foodMask, trayItems);
 
         trayOutputs.push_back(src);
         detectedFoodsMask.push_back(foodMask);
