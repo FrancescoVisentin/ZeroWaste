@@ -95,7 +95,8 @@ void water(Mat& img, Mat& dst, int width, int height) {
 
     // Create binary image from source image
     //cvtColor(tmp, bw, COLOR_BGR2GRAY);
-    threshold(bw, bw, 40, 255, THRESH_BINARY | THRESH_OTSU);
+    //cout<<threshold(bw, bw, 40, 255, THRESH_BINARY | THRESH_OTSU)<<"\n"; //Better threshold here to discard empty plates
+    threshold(bw, bw, 70, 255, THRESH_BINARY);
     imshow("Binary Image", bw);
     moveWindow("Binary Image", width*3, 10);
     
@@ -103,6 +104,7 @@ void water(Mat& img, Mat& dst, int width, int height) {
     Mat dist;
     distanceTransform(bw, dist, DIST_L2, 3);
 
+    Mat dd = dist.clone();
     // Normalize the distance image for range = {0.0, 1.0}
     // so we can visualize and threshold it
     normalize(dist, dist, 0, 1.0, NORM_MINMAX);
@@ -128,21 +130,79 @@ void water(Mat& img, Mat& dst, int width, int height) {
     vector<vector<Point> > contours;
     findContours(dist_8u, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
     
+    vector<pair<Point, float>> p;
     // Create the marker image for the watershed algorithm
     Mat markers = Mat::zeros(dist.size(), CV_32S);
     // Draw the foreground markers
     for (size_t i = 0; i < contours.size(); i++) {
         drawContours(markers, contours, static_cast<int>(i), Scalar(static_cast<int>(i)+1), -1);
+
+        double max, min;
+        Point maxPos, minPos;
+        Mat tmp = Mat::zeros(dist.size(), CV_8U);
+        drawContours(tmp, contours, static_cast<int>(i), 255, -1);
+        minMaxLoc(dd, &min, &max, &minPos, &maxPos, tmp);
+        p.push_back(pair(maxPos,max));
     }
-    
+
+    sort(p.begin(), p.end(), [](auto& left, auto& right) {
+        return left.second > right.second;
+    });
+
+    int NUM = 4;
+
+    Mat myMarkers = Mat::zeros(dist.size(), CV_32S);
+    circle(myMarkers, Point(50,50), 3, Scalar(255), -1);
+    circle(myMarkers, Point(myMarkers.cols-50,50), 3, Scalar(255), -1);
+    circle(myMarkers, Point(50,myMarkers.rows-50), 3, Scalar(255), -1);
+    circle(myMarkers, Point(myMarkers.cols-50,myMarkers.rows-50), 3, Scalar(255), -1);
+    for (int i = 0; i < p.size() && i < NUM; i++) {
+        circle(myMarkers, p[i].first, 3, Scalar(i+1), -1);
+    }
+    Mat myM8u;
+    myMarkers.convertTo(myM8u, CV_8U);
+    imshow("myM", myM8u*50);
+
+
     // Draw the background marker
     circle(markers, Point(50,50), 3, Scalar(255), -1);
+    circle(markers, Point(markers.rows-50,50), 3, Scalar(255), -1);
+    circle(markers, Point(50,markers.cols-50), 3, Scalar(255), -1);
+    circle(markers, Point(markers.rows-50,markers.cols-50), 3, Scalar(255), -1);
     Mat markers8u;
     markers.convertTo(markers8u, CV_8U, 10);
     imshow("Markers", markers8u);
     moveWindow("Markers", width*2, 100+height);
 
+    watershed(imgResult, myMarkers);
+    Mat myMark;
+    myMarkers.convertTo(myMark, CV_8U);
+    bitwise_not(myMark, myMark);
+    imshow("MyMarkers_v2", myMark); // uncomment this if you want to see how the mark image looks like at that point
     
+    // Generate random colors
+    vector<Vec3b> myColors;
+    for (size_t i = 0; i < NUM; i++) {
+        int b = theRNG().uniform(0, 256);
+        int g = theRNG().uniform(0, 256);
+        int r = theRNG().uniform(0, 256);
+        myColors.push_back(Vec3b((uchar)b, (uchar)g, (uchar)r));
+    }
+
+    // Create the result image
+    Mat myDst = Mat::zeros(myMarkers.size(), CV_8UC3);
+    //Fill labeled objects with random colors
+    for (int i = 0; i < myMarkers.rows; i++) {
+        for (int j = 0; j < myMarkers.cols; j++) {
+            int index = myMarkers.at<int>(i,j);
+            if (index > 0 && index <= NUM) {
+                myDst.at<Vec3b>(i,j) = myColors[index-1];
+            }
+        }
+    }
+    imshow("Res", myDst);
+
+
     // Perform the watershed algorithm
     watershed(imgResult, markers);
     Mat mark;
@@ -203,13 +263,13 @@ int main(int argc, char **argv){
         Point center(circles[i][0], circles[i][1]);
         int radius = round(circles[i][2]);
 
-        Rect r (center.x - round(0.75*radius), center.y - round(0.75*radius), 0.75*radius*2,  0.75*radius*2);
+        Rect r (center.x - round(0.8*radius), center.y - round(0.8*radius), 0.8*radius*2,  0.8*radius*2);
 
         //obtain ROI
         Mat roi(src, r);
         Mat mask(roi.size(), roi.type(), Scalar::all(255));
         // with a white, filled circle in it:
-        circle(mask, Point(0.75*radius,0.75*radius), 0.75*radius, Scalar::all(255), -1);
+        circle(mask, Point(0.8*radius,0.8*radius), 0.8*radius, Scalar::all(255), -1);
 
         // combine roi & mask:
         Mat plate = roi & mask;

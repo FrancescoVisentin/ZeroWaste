@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
     file["testPaths"]>>testImgsPaths;
     file.release();
 
-    if (true) {    
+    if (false) {    
         array<Mat,3> codewords;
         file = FileStorage("model/codewords.yml", FileStorage::READ);
         file["codewords_0"]>>codewords[0];

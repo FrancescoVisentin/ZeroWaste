@@ -117,7 +117,7 @@ void trainBoW(const cv::Mat& descPerImg, const cv::Mat& labelPerImg) {
 }
 
 int main(int argc, char** argv) {
-    string basePath = "/home/marco/Desktop/test/dataFINALE/";
+    string basePath = "/home/francesco/Scaricati/dataFINALE/";
 
     Mat trainImgsLabels;
     vector<string> categories, trainImgsPaths;

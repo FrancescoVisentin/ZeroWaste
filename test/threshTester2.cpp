@@ -8,8 +8,9 @@ using namespace std;
 vector<Vec3f> circles;
 vector<Mat> plates_roi;
 const char* window_name1 = "Thresh: ";
-int lower = 40;
-int upper = 60;
+int lower = 150;
+int upper = 228;
+int minArea = 5500;
 int tMax = 255;
 
 int NUM = 4;
@@ -53,7 +54,7 @@ static void thresh(int, void*) {
             for(size_t j = 0; j < contours.size(); j++) {
                 double area = contourArea(contours[j]); 
                 
-                if (area >= 1000 && hierarchy[j][3] == -1) {
+                if (area >= minArea && hierarchy[j][3] == -1) {
                     drawContours(dst, contours, j, Scalar(0,255,0), 1);
                     rectangle(dst, contoursRect[j], 255);
                     rectangle(satMask, contoursRect[j], 255);
@@ -61,12 +62,13 @@ static void thresh(int, void*) {
             }
 
 
-            resize(dst, dst, dst.size()/2);
-            resize(satMask, satMask, satMask.size()/2);
+            //resize(dst, dst, dst.size()/2);
+            //resize(dst, dst, dst.size()/2);
             imshow("Gamma pre thresh "+ to_string(i+1), dst);
             if (iter < NUM) moveWindow("Gamma pre thresh "+ to_string(i+1), 620*(i-NUM*OFFSET), 800);
                 
             // Correct the thresholded image
+            //resize(satMask, satMask, satMask.size()/2);
             imshow("Binary Image "+to_string(i+1), satMask);
             if (iter++ < NUM) moveWindow("Binary Image "+to_string(i+1), 620*(i-NUM*OFFSET), 10);
         }
@@ -78,13 +80,13 @@ static void thresh(int, void*) {
 int main(int argc, char **argv){
     vector<string> paths;
     string p = argv[1];
-    glob(p+"*.jpg", paths, true);
+    glob(p+"*.jpg", paths, false);
 
     for (int i = 0; i < paths.size(); i++) {
         cout<<paths[i]<<"\n";
     }
 
-    //OFFSET = atoi(argv[2]);
+    OFFSET = atoi(argv[2]);
    
     for(int j = 0; j < paths.size(); j++) {
         Mat src = imread(paths[j]);
@@ -97,7 +99,9 @@ int main(int argc, char **argv){
     namedWindow(window_name1, WINDOW_NORMAL);
     createTrackbar("Lower:", window_name1, &lower, tMax, thresh);
     createTrackbar("Upper:", window_name1, &upper, tMax, thresh);
-
+    createTrackbar("Area:", window_name1, &minArea, 10000, thresh);
+    createTrackbar("Offset:", window_name1, &OFFSET, 8, thresh);
+    setTrackbarPos("Lower:", window_name1, 160);
     waitKey(0);
 
     return 0;

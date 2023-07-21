@@ -16,6 +16,8 @@ void drawCircles(Mat& dst){
          circle( dst, center, 3, Scalar(0,255,0), -1, 8, 0 );
          // draw the circle outline
          circle( dst, center, radius, Scalar(0,0,255), 3, 8, 0 );
+
+         cout<<"rad: "<<radius<<"\n";
     }
     //imshow("Result", dst);
 }
@@ -38,7 +40,7 @@ Mat getCleaningMask(Mat& src, Rect& bound_rect){
     Mat plate_thresh;
     Mat plate_sat;
     saturationChannel(image, plate_sat);
-    threshold(plate_sat, plate_thresh,0,255, THRESH_OTSU);
+    cout<<threshold(plate_sat, plate_thresh, 180,255, THRESH_BINARY)<<"\n";
 
     imshow("Mask thresh", plate_thresh);
 
@@ -64,7 +66,7 @@ Mat getCleaningMask(Mat& src, Rect& bound_rect){
         minEnclosingCircle( contours_poly[i], center[i], radius[i] );
     }
 
-    Mat dst(corrected.size(), CV_8UC1);
+    Mat dst = Mat::zeros(corrected.size(), CV_8UC1);
     for(size_t i = 0; i < contours.size(); i++)
         if(contourArea(contours[i]) >= 80)
             if ( hierarchy[i][3] == -1) 
@@ -77,6 +79,12 @@ Mat getCleaningMask(Mat& src, Rect& bound_rect){
 
     bound_rect = *maxEl;
 
+
+    Mat imm = src.clone();
+    rectangle(imm, bound_rect, 255);
+    imshow("r", imm);
+
+    waitKey(0);
     
     /*for(size_t i = 0; i < contours.size(); i++)
         if(boundRect[i].area() >= 10000)
